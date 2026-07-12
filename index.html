@@ -6,6 +6,11 @@
 <title>MAKE IT MEME — ONLINE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
+
+<!-- ===================== FIREBASE SDK (compat, works with plain <script> tags — no build step / no Node.js needed) ===================== -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
 <style>
   :root{
     --ink:#151515;
@@ -193,6 +198,15 @@
 
   .btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;}
   .hint{margin-top:14px;font-size:.8rem;opacity:.65;line-height:1.6;}
+
+  /* connection status badge (new) */
+  .conn-badge{
+    position:fixed;bottom:14px;left:14px;z-index:60;
+    font-family:'Archivo Black',sans-serif;font-size:.7rem;text-transform:uppercase;
+    padding:6px 12px;border:2.5px solid var(--ink);border-radius:20px;box-shadow:3px 3px 0 var(--ink);
+    background:var(--green);color:var(--ink);
+  }
+  .conn-badge.offline{background:var(--pink);color:var(--paper);}
 </style>
 </head>
 <body>
@@ -393,12 +407,39 @@
   </section>
 
   <div class="timer-badge hidden" id="timerBadge">60</div>
+  <div class="conn-badge hidden" id="connBadge">מחובר</div>
 
 </div>
 
 <script>
 (function(){
   "use strict";
+
+  // =====================================================================
+  // FIREBASE CONFIG — replace these values with the ones from your own
+  // Firebase project (Project settings -> General -> "Your apps" -> Web app).
+  // See the setup instructions given alongside this file for exact steps.
+  // =====================================================================
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const connBadge = document.getElementById("connBadge");
+  db.ref(".info/connected").on("value", (snap) => {
+    const online = snap.val() === true;
+    connBadge.classList.remove("hidden");
+    connBadge.textContent = online ? "🟢 מחובר" : "🔴 מנותק...";
+    connBadge.classList.toggle("offline", !online);
+  });
 
   // ---------- identity ----------
   const myId = (crypto.randomUUID ? crypto.randomUUID() : ('p-' + Math.random().toString(36).slice(2)));
@@ -480,21 +521,58 @@
     return base + "#lobby=" + code;
   }
 
-  // ---------- storage ----------
-  function storageKey(code){ return "lobby-" + code; }
+  // =====================================================================
+  // FIREBASE DATA LAYER
+  // Data shape at  lobbies/{code}:
+  //   { phase, hostId, players:{id:{name,avatarSeed,joinedAt}}, settings:{swapLimit,timeLimit},
+  //     countdownStartedAt, playingStartedAt, submissions:{id:{name,avatarSeed,dataUrl}},
+  //     revealOrder:[ids...], revealIndex, revealStartedAt }
+  // =====================================================================
+  function lobbyRef(code){ return db.ref("lobbies/" + code); }
+
+  function normalizeState(state){
+    if(!state) return state;
+    state.players = state.players || {};
+    state.submissions = state.submissions || {};
+    state.settings = state.settings || { swapLimit: 10, timeLimit: 60 };
+    state.revealOrder = state.revealOrder || [];
+    state.revealIndex = state.revealIndex || 0;
+    state.phase = state.phase || "lobby";
+    return state;
+  }
+
+  // one-time read (used for host-side "is this still current?" checks before advancing phases)
   async function loadState(code){
     if(!code) return null;
     try{
-      const r = await window.storage.get(storageKey(code), true);
-      return r ? JSON.parse(r.value) : null;
-    }catch(e){ return null; }
+      const snap = await lobbyRef(code).get();
+      return snap.exists() ? normalizeState(snap.val()) : null;
+    }catch(e){ console.error("loadState failed", e); return null; }
   }
+
+  // full overwrite — only ever called by the host, at moments when the host
+  // is the sole writer of the whole document (creating the lobby)
   async function saveState(code, state){
     if(!code) return false;
     try{
-      await window.storage.set(storageKey(code), JSON.stringify(state), true);
+      await lobbyRef(code).set(state);
       return true;
-    }catch(e){ return false; }
+    }catch(e){ console.error("saveState failed", e); return false; }
+  }
+
+  // targeted writes so two players joining / submitting at the same time
+  // never clobber each other (each writes only its own sub-path)
+  async function writePlayer(code, id, player){
+    try{ await lobbyRef(code).child("players/" + id).set(player); return true; }
+    catch(e){ console.error("writePlayer failed", e); return false; }
+  }
+  async function writeSubmission(code, id, submission){
+    try{ await lobbyRef(code).child("submissions/" + id).set(submission); return true; }
+    catch(e){ console.error("writeSubmission failed", e); return false; }
+  }
+  async function updateLobby(code, patch){
+    try{ await lobbyRef(code).update(patch); return true; }
+    catch(e){ console.error("updateLobby failed", e); return false; }
   }
 
   function freshState(){
@@ -564,10 +642,13 @@
     const state = freshState();
     state.hostId = myId;
     state.players[myId] = { name: myName, avatarSeed: myId, joinedAt: Date.now() };
-    await saveState(code, state);
+    const ok = await saveState(code, state);
+    if(!ok){
+      alert("לא הצלחנו ליצור לובי. בדקו את חיבור ה-Firebase (ראו הוראות ההתקנה) ונסו שוב.");
+      createBtn.disabled = false;
+      return;
+    }
     setLobbyCodeInUrl(code);
-    lastRenderedPhase = null;
-    applyState(state);
     startPolling();
   }
   createBtn.addEventListener("click", doCreate);
@@ -588,12 +669,13 @@
       return;
     }
     currentLobbyCode = code;
-    if(!state.players[myId]) state.players[myId] = { name: myName, avatarSeed: myId, joinedAt: Date.now() };
-    else state.players[myId].name = myName;
-    await saveState(code, state);
+    const ok = await writePlayer(code, myId, { name: myName, avatarSeed: myId, joinedAt: Date.now() });
+    if(!ok){
+      alert("לא הצלחנו להצטרף ללובי. נסו שוב.");
+      joinBtn.disabled = false;
+      return;
+    }
     setLobbyCodeInUrl(code);
-    lastRenderedPhase = null;
-    applyState(state);
     startPolling();
   }
   joinBtn.addEventListener("click", doJoinExisting);
@@ -666,15 +748,16 @@
     ensureAudio();
     const state = await loadState(currentLobbyCode);
     if(!state || myId !== state.hostId) return;
-    state.settings.swapLimit = Math.max(1, parseInt(swapLimitInput.value,10) || 10);
-    state.settings.timeLimit = Math.max(15, parseInt(timeLimitInput.value,10) || 60);
-    state.phase = "countdown";
-    state.countdownStartedAt = Date.now();
-    state.submissions = {};
-    state.revealOrder = [];
-    state.revealIndex = 0;
-    await saveState(currentLobbyCode, state);
-    applyState(state);
+    const swapLimit = Math.max(1, parseInt(swapLimitInput.value,10) || 10);
+    const timeLimit = Math.max(15, parseInt(timeLimitInput.value,10) || 60);
+    await updateLobby(currentLobbyCode, {
+      settings: { swapLimit, timeLimit },
+      phase: "countdown",
+      countdownStartedAt: Date.now(),
+      submissions: null,
+      revealOrder: null,
+      revealIndex: 0
+    });
   });
 
   // ---------- countdown ----------
@@ -707,10 +790,11 @@
       setTimeout(async () => {
         const fresh = await loadState(currentLobbyCode);
         if(!fresh || fresh.phase !== "countdown" || fresh.countdownStartedAt !== state.countdownStartedAt) return;
-        fresh.phase = "playing";
-        fresh.playingStartedAt = Date.now();
-        fresh.submissions = {};
-        await saveState(currentLobbyCode, fresh);
+        await updateLobby(currentLobbyCode, {
+          phase: "playing",
+          playingStartedAt: Date.now(),
+          submissions: null
+        });
       }, Math.max(0, goDelay));
     }
   }
@@ -823,27 +907,27 @@
     swapBtn.disabled = false;
   }
 
+  // NOTE: JPEG (not PNG) keeps each submission small enough to store
+  // comfortably in the Realtime Database (a few hundred KB vs multiple MB).
   async function submitMeme(){
     if(submittedThisRound || !currentImg) return;
     submittedThisRound = true;
     submitBtn.disabled = true;
     swapBtn.disabled = true;
     let dataUrl = null;
-    try{ dataUrl = canvas.toDataURL("image/png"); }catch(e){ dataUrl = null; }
+    try{ dataUrl = canvas.toDataURL("image/jpeg", 0.72); }catch(e){ dataUrl = null; }
 
     showScreen("submitting");
     if(gameTimerInterval){ clearInterval(gameTimerInterval); gameTimerInterval = null; }
 
-    const state = await loadState(currentLobbyCode);
-    if(state && dataUrl){
-      state.submissions[myId] = { name: myName, avatarSeed: myId, dataUrl: dataUrl };
-      await saveState(currentLobbyCode, state);
+    if(dataUrl){
+      await writeSubmission(currentLobbyCode, myId, { name: myName, avatarSeed: myId, dataUrl: dataUrl });
     }
 
     setTimeout(() => {
       showScreen("waiting");
       document.getElementById("waitingText").textContent = "מגישים את כל היצירות...";
-    }, 3000);
+    }, 1200);
   }
   submitBtn.addEventListener("click", submitMeme);
 
@@ -876,11 +960,13 @@
       const fresh = await loadState(currentLobbyCode);
       if(!fresh || fresh.phase !== "playing" || fresh.playingStartedAt !== state.playingStartedAt) return;
       const ids = Object.keys(fresh.submissions);
-      fresh.revealOrder = shuffle(ids);
-      fresh.revealIndex = 0;
-      fresh.revealStartedAt = Date.now();
-      fresh.phase = ids.length ? "reveal" : "done";
-      await saveState(currentLobbyCode, fresh);
+      const revealOrder = shuffle(ids);
+      await updateLobby(currentLobbyCode, {
+        revealOrder: revealOrder,
+        revealIndex: 0,
+        revealStartedAt: Date.now(),
+        phase: ids.length ? "reveal" : "done"
+      });
     }, Math.max(0, delay));
   }
 
@@ -919,12 +1005,10 @@
         if(!fresh || fresh.phase !== "reveal" || fresh.revealStartedAt !== state.revealStartedAt) return;
         const nextIdx = (fresh.revealIndex || 0) + 1;
         if(nextIdx >= (fresh.revealOrder || []).length){
-          fresh.phase = "done";
+          await updateLobby(currentLobbyCode, { phase: "done" });
         } else {
-          fresh.revealIndex = nextIdx;
-          fresh.revealStartedAt = Date.now();
+          await updateLobby(currentLobbyCode, { revealIndex: nextIdx, revealStartedAt: Date.now() });
         }
-        await saveState(currentLobbyCode, fresh);
       }, Math.max(0, delay));
     }
   }
@@ -951,15 +1035,15 @@
       btn.addEventListener("click", async () => {
         const fresh = await loadState(currentLobbyCode);
         if(!fresh || myId !== fresh.hostId) return;
-        fresh.phase = "lobby";
-        fresh.countdownStartedAt = null;
-        fresh.playingStartedAt = null;
-        fresh.submissions = {};
-        fresh.revealOrder = [];
-        fresh.revealIndex = 0;
-        fresh.revealStartedAt = null;
-        await saveState(currentLobbyCode, fresh);
-        applyState(fresh);
+        await updateLobby(currentLobbyCode, {
+          phase: "lobby",
+          countdownStartedAt: null,
+          playingStartedAt: null,
+          submissions: null,
+          revealOrder: null,
+          revealIndex: 0,
+          revealStartedAt: null
+        });
       });
       doneHostBtns.appendChild(btn);
     } else {
@@ -971,8 +1055,6 @@
   }
 
   // ---------- main state application ----------
-  let lastRenderedPhase = null;
-
   function applyState(state){
     if(!state) return;
 
@@ -1015,17 +1097,24 @@
         renderLobby(state);
         showScreen("lobby");
     }
-    lastRenderedPhase = state.phase;
   }
 
-  // ---------- polling ----------
-  let pollHandle = null;
+  // ---------- realtime sync (replaces the old polling loop) ----------
+  let liveRef = null;
+  let liveCallback = null;
   function startPolling(){
-    if(pollHandle) return;
-    pollHandle = setInterval(async () => {
-      const state = await loadState(currentLobbyCode);
+    if(liveRef) return; // already listening
+    liveRef = lobbyRef(currentLobbyCode);
+    liveCallback = (snap) => {
+      const state = normalizeState(snap.val());
       if(state) applyState(state);
-    }, 1200);
+    };
+    // Firebase fires this immediately with the current value, then again
+    // on every future change — this is what makes everyone's UI update
+    // in real time as soon as any player writes to the lobby.
+    liveRef.on("value", liveCallback, (err) => {
+      console.error("Realtime listener error", err);
+    });
   }
 
 })();
