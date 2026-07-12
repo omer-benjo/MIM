@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAKE IT MEME — ONLINE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#151515;
+    --paper:#FFF7E8;
+    --pink:#FF3D8A;
+    --cyan:#2BD2E0;
+    --yellow:#FFE400;
+    --green:#38D66B;
+    --line:4px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 6px 6px, rgba(21,21,21,.08) 2px, transparent 2.4px) 0 0/22px 22px,
+      var(--paper);
+    color:var(--ink);
+    font-family:'Rubik',sans-serif;
+    min-height:100vh;
+    padding:24px 16px 50px;
+  }
+  .wrap{max-width:900px;margin:0 auto;}
+  header{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:20px;}
+  .logo{
+    font-family:'Anton',sans-serif;
+    font-size:clamp(2.2rem,7vw,3.6rem);
+    letter-spacing:1px;line-height:.95;color:var(--ink);text-transform:uppercase;
+  }
+  .logo .hit{
+    color:var(--paper);-webkit-text-stroke:3px var(--ink);background:var(--pink);
+    padding:0 12px;transform:rotate(-3deg);display:inline-block;box-shadow:6px 6px 0 var(--ink);
+  }
+  .logo .on{color:var(--paper);background:var(--cyan);-webkit-text-stroke:3px var(--ink);
+    padding:0 10px;transform:rotate(2deg);display:inline-block;box-shadow:6px 6px 0 var(--ink);}
+  .tagline{margin-top:10px;font-weight:600;opacity:.75;font-size:.95rem;}
+
+  .panel{
+    background:#fff;border:var(--line) solid var(--ink);border-radius:18px;
+    box-shadow:8px 8px 0 var(--cyan);padding:22px;margin-bottom:20px;
+  }
+  .panel.pink-shadow{box-shadow:8px 8px 0 var(--pink);}
+  .panel.yellow-shadow{box-shadow:8px 8px 0 var(--yellow);}
+
+  h2{font-family:'Archivo Black',sans-serif;font-size:1.3rem;margin:0 0 14px;text-transform:uppercase;}
+  p.sub{opacity:.7;font-weight:600;font-size:.9rem;margin:-8px 0 16px;}
+
+  label{display:block;font-weight:800;font-size:.78rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+  input[type=text], input[type=number]{
+    width:100%;padding:11px 12px;border:3px solid var(--ink);border-radius:10px;
+    font-family:'Rubik',sans-serif;font-size:1rem;font-weight:600;background:var(--paper);color:var(--ink);
+  }
+  input:focus{outline:3px solid var(--yellow);outline-offset:1px;}
+  input[type=color]{width:44px;height:38px;border:3px solid var(--ink);border-radius:8px;padding:0;background:none;cursor:pointer;}
+  input[type=range]{width:100%;accent-color:var(--pink);}
+
+  .row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+  .row:last-child{margin-bottom:0;}
+  .field{flex:1;min-width:160px;}
+
+  button{
+    font-family:'Archivo Black',sans-serif;font-size:.82rem;text-transform:uppercase;letter-spacing:.3px;
+    border:3px solid var(--ink);border-radius:10px;padding:12px 18px;cursor:pointer;
+    background:var(--yellow);color:var(--ink);box-shadow:4px 4px 0 var(--ink);transition:transform .08s ease;
+  }
+  button:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink);}
+  button:active{transform:translate(1px,1px);box-shadow:2px 2px 0 var(--ink);}
+  button:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:4px 4px 0 var(--ink);}
+  button.alt{background:var(--cyan);}
+  button.main{background:var(--pink);color:var(--paper);}
+  button.ok{background:var(--green);}
+  button:focus-visible{outline:3px solid var(--ink);outline-offset:2px;}
+
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  /* lobby */
+  .players{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:14px;margin-bottom:18px;}
+  .player-card{
+    border:3px solid var(--ink);border-radius:14px;background:var(--paper);padding:10px;text-align:center;
+    box-shadow:3px 3px 0 var(--ink);position:relative;
+  }
+  .player-card img{width:64px;height:64px;border-radius:50%;border:3px solid var(--ink);object-fit:cover;background:#000;}
+  .player-card .pname{font-weight:800;font-size:.82rem;margin-top:6px;word-break:break-word;}
+  .player-card .crown{position:absolute;top:-10px;right:-6px;font-size:1.3rem;}
+  .you-tag{display:inline-block;margin-top:2px;font-size:.65rem;background:var(--cyan);border:2px solid var(--ink);border-radius:6px;padding:0 5px;font-weight:800;}
+
+  .waiting-note{font-weight:700;opacity:.7;text-align:center;padding:10px 0;}
+
+  /* countdown */
+  .countdown-box{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 10px;}
+  .countdown-num{
+    font-family:'Anton',sans-serif;font-size:min(28vw,220px);line-height:1;color:var(--pink);
+    -webkit-text-stroke:5px var(--ink);text-shadow:8px 8px 0 var(--ink);
+  }
+  .countdown-label{font-family:'Archivo Black',sans-serif;text-transform:uppercase;margin-top:10px;letter-spacing:1px;}
+
+  /* game / timer */
+  .timer-badge{
+    position:fixed;top:16px;left:16px;z-index:50;
+    font-family:'Anton',sans-serif;font-size:1.6rem;background:var(--yellow);
+    border:3px solid var(--ink);border-radius:12px;padding:6px 16px;box-shadow:4px 4px 0 var(--ink);
+  }
+  .timer-badge.low{background:var(--pink);color:var(--paper);}
+
+  .stage{background:var(--ink);border:var(--line) solid var(--ink);border-radius:18px;box-shadow:10px 10px 0 var(--pink);padding:14px;display:flex;justify-content:center;}
+  canvas{max-width:100%;height:auto;border-radius:10px;display:block;background:#000;}
+
+  .swap-counter{font-weight:800;font-size:.8rem;opacity:.75;margin-top:8px;text-align:center;}
+
+  /* submitting */
+  .submitting-box{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:70px 10px;gap:16px;}
+  .spinner{width:56px;height:56px;border:6px solid var(--ink);border-top-color:var(--pink);border-radius:50%;animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .submitting-text{font-family:'Archivo Black',sans-serif;text-transform:uppercase;text-align:center;}
+
+  /* reveal */
+  .reveal-box{display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .reveal-name{font-family:'Archivo Black',sans-serif;font-size:1.3rem;background:var(--cyan);border:3px solid var(--ink);border-radius:12px;padding:8px 20px;box-shadow:4px 4px 0 var(--ink);}
+  .reveal-img{max-width:100%;border:var(--line) solid var(--ink);border-radius:16px;box-shadow:10px 10px 0 var(--yellow);}
+  .reveal-progress{width:100%;max-width:500px;height:14px;border:3px solid var(--ink);border-radius:8px;overflow:hidden;background:var(--paper);}
+  .reveal-progress-bar{height:100%;background:var(--pink);width:100%;transition:width .2s linear;}
+  .reveal-count{font-weight:800;opacity:.7;}
+
+  /* gallery / done */
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;}
+  .gallery figure{margin:0;border:3px solid var(--ink);border-radius:12px;overflow:hidden;background:#000;box-shadow:3px 3px 0 var(--ink);}
+  .gallery img{width:100%;display:block;}
+  .gallery figcaption{background:var(--paper);text-align:center;font-weight:800;font-size:.78rem;padding:6px 4px;}
+
+  .btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;}
+  .hint{margin-top:14px;font-size:.8rem;opacity:.65;line-height:1.6;}
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">MAKE <span class="hit">IT</span> MEME <span class="on">ONLINE</span></div>
+    <div class="tagline">מלאו שם, המתינו בלובי, וכשהמנחה לוחץ START — יוצרים ממים נגד השעון</div>
+  </header>
+
+  <!-- JOIN -->
+  <section id="screen-join" class="screen active">
+    <div class="panel">
+      <h2>הצטרפות ללובי</h2>
+      <p class="sub">כל מי שנכנס לעמוד הזה משתתף באותו לובי משותף</p>
+      <div class="row">
+        <div class="field">
+          <label for="nameInput">השם שלך</label>
+          <input type="text" id="nameInput" maxlength="18" placeholder="לדוגמה: דני">
+        </div>
+      </div>
+      <div class="btns">
+        <button class="main" id="joinBtn" type="button">🚪 הצטרף/י ללובי</button>
+      </div>
+      <div class="hint">שים לב: הלובי, השחקנים והיצירות משותפים לכל מי שפותח את העמוד הזה — כולל שם ותמונת הפרופיל שלכם.</div>
+    </div>
+  </section>
+
+  <!-- LOBBY -->
+  <section id="screen-lobby" class="screen">
+    <div class="panel">
+      <h2>הלובי</h2>
+      <p class="sub" id="lobbySub">ממתינים לשחקנים...</p>
+      <div class="players" id="playersGrid"></div>
+
+      <div id="hostSettings" class="hidden">
+        <div class="row">
+          <div class="field">
+            <label for="swapLimitInput">מספר החלפות תמונה מותרות</label>
+            <input type="number" id="swapLimitInput" min="1" max="30" value="10">
+          </div>
+          <div class="field">
+            <label for="timeLimitInput">זמן ליצירת המם (שניות)</label>
+            <input type="number" id="timeLimitInput" min="15" max="300" value="60">
+          </div>
+        </div>
+        <div class="btns">
+          <button class="main" id="startBtn" type="button">▶️ START</button>
+        </div>
+      </div>
+      <div id="guestWaiting" class="waiting-note hidden">⏳ ממתינים שהמנחה ילחץ START...</div>
+    </div>
+  </section>
+
+  <!-- COUNTDOWN -->
+  <section id="screen-countdown" class="screen">
+    <div class="panel">
+      <div class="countdown-box">
+        <div class="countdown-num" id="countdownNum">3</div>
+        <div class="countdown-label" id="countdownLabel">מתחילים!</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section id="screen-game" class="screen">
+    <div class="panel">
+      <h2>תיצור/י את המם שלך!</h2>
+      <div class="stage">
+        <canvas id="canvas" width="800" height="600"></canvas>
+      </div>
+      <div class="swap-counter" id="swapCounter"></div>
+
+      <div class="row" style="margin-top:16px;">
+        <div class="field">
+          <label for="topText">טקסט עליון</label>
+          <input type="text" id="topText" placeholder="כשאתה..." maxlength="80">
+        </div>
+        <div class="field">
+          <label for="bottomText">טקסט תחתון</label>
+          <input type="text" id="bottomText" placeholder="ואז..." maxlength="80">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label for="fontSize">גודל טקסט</label>
+          <input type="range" id="fontSize" min="20" max="90" value="52">
+        </div>
+        <div class="field" style="max-width:110px;">
+          <label for="textColor">צבע טקסט</label>
+          <input type="color" id="textColor" value="#ffffff">
+        </div>
+        <div class="field" style="max-width:110px;">
+          <label for="strokeColor">צבע מסגרת</label>
+          <input type="color" id="strokeColor" value="#000000">
+        </div>
+      </div>
+      <div class="btns">
+        <button class="alt" id="swapBtn" type="button">🔀 החלף תמונה</button>
+        <button class="ok" id="submitBtn" type="button">✅ הגש/י עכשיו</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUBMITTING -->
+  <section id="screen-submitting" class="screen">
+    <div class="panel">
+      <div class="submitting-box">
+        <div class="spinner"></div>
+        <div class="submitting-text">מגיש/ה את היצירה שלך...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WAITING FOR OTHERS -->
+  <section id="screen-waiting" class="screen">
+    <div class="panel">
+      <div class="submitting-box">
+        <div class="spinner"></div>
+        <div class="submitting-text" id="waitingText">מגישים את כל היצירות...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVEAL -->
+  <section id="screen-reveal" class="screen">
+    <div class="panel">
+      <div class="reveal-box">
+        <div class="reveal-count" id="revealCount">1 / 1</div>
+        <div class="reveal-name" id="revealName">שם</div>
+        <img class="reveal-img" id="revealImg" src="" alt="meme">
+        <div class="reveal-progress"><div class="reveal-progress-bar" id="revealBar"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DONE -->
+  <section id="screen-done" class="screen">
+    <div class="panel">
+      <h2>🎉 סיבוב הסתיים!</h2>
+      <div class="gallery" id="doneGallery"></div>
+      <div class="btns" id="doneHostBtns"></div>
+    </div>
+  </section>
+
+  <div class="timer-badge hidden" id="timerBadge">60</div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- basic identity ----------
+  const myId = (crypto.randomUUID ? crypto.randomUUID() : ('p-' + Math.random().toString(36).slice(2)));
+  let myName = "";
+  let audioCtx = null;
+
+  function ensureAudio(){
+    if(!audioCtx){
+      try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){}
+    }
+    if(audioCtx && audioCtx.state === "suspended"){ audioCtx.resume(); }
+  }
+  function beep(freq, dur, type){
+    if(!audioCtx) return;
+    try{
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type || "square";
+      o.frequency.value = freq;
+      g.gain.value = 0.18;
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur/1000);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start();
+      o.stop(audioCtx.currentTime + dur/1000);
+    }catch(e){}
+  }
+
+  function randSeed(){ return Math.random().toString(36).slice(2) + Date.now(); }
+  function avatarUrl(seed){ return `https://picsum.photos/seed/${encodeURIComponent(seed)}/200/200`; }
+  function imageUrl(seed){ return `https://picsum.photos/seed/${encodeURIComponent(seed)}/800/600`; }
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  // ---------- storage ----------
+  async function loadState(){
+    try{
+      const r = await window.storage.get("state", true);
+      return r ? JSON.parse(r.value) : null;
+    }catch(e){ return null; }
+  }
+  async function saveState(state){
+    try{
+      await window.storage.set("state", JSON.stringify(state), true);
+      return true;
+    }catch(e){ return false; }
+  }
+
+  function freshState(){
+    return {
+      phase: "lobby",
+      hostId: myId,
+      players: {},
+      settings: { swapLimit: 10, timeLimit: 60 },
+      countdownStartedAt: null,
+      playingStartedAt: null,
+      submissions: {},
+      revealOrder: [],
+      revealIndex: 0,
+      revealStartedAt: null
+    };
+  }
+
+  // ---------- screens ----------
+  const screens = {};
+  ["join","lobby","countdown","game","submitting","waiting","reveal","done"].forEach(id=>{
+    screens[id] = document.getElementById("screen-" + id);
+  });
+  function showScreen(id){
+    Object.values(screens).forEach(s => s.classList.remove("active"));
+    screens[id].classList.add("active");
+  }
+
+  const timerBadge = document.getElementById("timerBadge");
+
+  // ---------- join ----------
+  const nameInput = document.getElementById("nameInput");
+  const joinBtn = document.getElementById("joinBtn");
+
+  async function doJoin(){
+    const name = nameInput.value.trim();
+    if(!name){ nameInput.focus(); return; }
+    myName = name;
+    ensureAudio();
+    joinBtn.disabled = true;
+    let state = await loadState();
+    if(!state){ state = freshState(); }
+    if(!state.players[myId]){
+      state.players[myId] = { name: myName, avatarSeed: myId, joinedAt: Date.now() };
+    } else {
+      state.players[myId].name = myName;
+    }
+    if(!state.hostId || !state.players[state.hostId]){
+      state.hostId = myId;
+    }
+    await saveState(state);
+    lastRenderedPhase = null;
+    applyState(state);
+    startPolling();
+  }
+  joinBtn.addEventListener("click", doJoin);
+  nameInput.addEventListener("keydown", e => { if(e.key === "Enter") doJoin(); });
+
+  // ---------- lobby ----------
+  const playersGrid = document.getElementById("playersGrid");
+  const lobbySub = document.getElementById("lobbySub");
+  const hostSettings = document.getElementById("hostSettings");
+  const guestWaiting = document.getElementById("guestWaiting");
+  const swapLimitInput = document.getElementById("swapLimitInput");
+  const timeLimitInput = document.getElementById("timeLimitInput");
+  const startBtn = document.getElementById("startBtn");
+
+  function renderLobby(state){
+    const ids = Object.keys(state.players);
+    lobbySub.textContent = ids.length === 1 ? "שחקן/ית אחד/ת בלובי..." : `${ids.length} שחקנים בלובי`;
+    playersGrid.innerHTML = "";
+    ids.forEach(id => {
+      const p = state.players[id];
+      const card = document.createElement("div");
+      card.className = "player-card";
+      card.innerHTML = `
+        ${id === state.hostId ? '<div class="crown">👑</div>' : ""}
+        <img src="${avatarUrl(p.avatarSeed)}" alt="">
+        <div class="pname">${escapeHtml(p.name)}</div>
+        ${id === myId ? '<div class="you-tag">את/ה</div>' : ""}
+      `;
+      playersGrid.appendChild(card);
+    });
+    const isHost = (myId === state.hostId);
+    hostSettings.classList.toggle("hidden", !isHost);
+    guestWaiting.classList.toggle("hidden", isHost);
+    if(isHost){
+      swapLimitInput.value = state.settings.swapLimit;
+      timeLimitInput.value = state.settings.timeLimit;
+    }
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+
+  startBtn.addEventListener("click", async () => {
+    ensureAudio();
+    let state = await loadState();
+    if(!state || myId !== state.hostId) return;
+    state.settings.swapLimit = Math.max(1, parseInt(swapLimitInput.value,10) || 10);
+    state.settings.timeLimit = Math.max(15, parseInt(timeLimitInput.value,10) || 60);
+    state.phase = "countdown";
+    state.countdownStartedAt = Date.now();
+    state.submissions = {};
+    state.revealOrder = [];
+    state.revealIndex = 0;
+    await saveState(state);
+    applyState(state);
+  });
+
+  // ---------- countdown ----------
+  const countdownNum = document.getElementById("countdownNum");
+  const countdownLabel = document.getElementById("countdownLabel");
+  let countdownHandledFor = null;
+
+  function runCountdown(state){
+    if(countdownHandledFor === state.countdownStartedAt) return;
+    countdownHandledFor = state.countdownStartedAt;
+    ensureAudio();
+    const steps = [
+      { at: 0,    text: "3", label: "מתכוננים...", freq: 440 },
+      { at: 1000, text: "2", label: "מתכוננים...", freq: 440 },
+      { at: 2000, text: "1", label: "כמעט...",      freq: 440 },
+      { at: 3000, text: "צאו!", label: "תתחילו ליצור!", freq: 880 }
+    ];
+    steps.forEach(step => {
+      const delay = state.countdownStartedAt + step.at - Date.now();
+      const run = () => {
+        countdownNum.textContent = step.text;
+        countdownLabel.textContent = step.label;
+        beep(step.freq, step.at === 3000 ? 400 : 180, step.at === 3000 ? "sawtooth" : "square");
+      };
+      if(delay <= 0) run(); else setTimeout(run, delay);
+    });
+
+    // host advances to playing once countdown completes
+    if(myId === state.hostId){
+      const goDelay = state.countdownStartedAt + 3600 - Date.now();
+      setTimeout(async () => {
+        const fresh = await loadState();
+        if(!fresh || fresh.phase !== "countdown" || fresh.countdownStartedAt !== state.countdownStartedAt) return;
+        fresh.phase = "playing";
+        fresh.playingStartedAt = Date.now();
+        fresh.submissions = {};
+        await saveState(fresh);
+      }, Math.max(0, goDelay));
+    }
+  }
+
+  // ---------- game ----------
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const topInput = document.getElementById("topText");
+  const bottomInput = document.getElementById("bottomText");
+  const fontSizeInput = document.getElementById("fontSize");
+  const textColorInput = document.getElementById("textColor");
+  const strokeColorInput = document.getElementById("strokeColor");
+  const swapBtn = document.getElementById("swapBtn");
+  const submitBtn = document.getElementById("submitBtn");
+  const swapCounter = document.getElementById("swapCounter");
+
+  let currentImg = null;
+  let swapsUsed = 0;
+  let swapLimitLocal = 10;
+  let gameRoundKey = null;
+  let submittedThisRound = false;
+  let gameTimerInterval = null;
+
+  function loadGameImage(seed){
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => { currentImg = img; drawCanvas(); };
+    img.onerror = () => { /* try another seed on failure */ if(seed.indexOf("retry")===-1) loadGameImage(seed + "retry"); };
+    img.src = imageUrl(seed);
+  }
+
+  function wrapLines(text, maxWidth){
+    const words = text.split(" ");
+    const lines = [];
+    let line = "";
+    for(const word of words){
+      const test = line ? line + " " + word : word;
+      if(ctx.measureText(test).width > maxWidth && line){ lines.push(line); line = word; }
+      else { line = test; }
+    }
+    if(line) lines.push(line);
+    return lines;
+  }
+
+  function drawMemeText(text, baseY, fromTop){
+    if(!text) return;
+    const size = parseInt(fontSizeInput.value,10);
+    ctx.font = `900 ${size}px 'Anton', Impact, 'Archivo Black', sans-serif`;
+    ctx.textAlign = "center";
+    ctx.lineJoin = "round";
+    ctx.miterLimit = 2;
+    ctx.fillStyle = textColorInput.value;
+    ctx.strokeStyle = strokeColorInput.value;
+    ctx.lineWidth = Math.max(3, size/12);
+    const maxWidth = canvas.width - 40;
+    const lines = wrapLines(text.toUpperCase(), maxWidth);
+    const lineHeight = size * 1.08;
+    lines.forEach((line,i) => {
+      const y = fromTop ? baseY + i*lineHeight : baseY - (lines.length-1-i)*lineHeight;
+      ctx.strokeText(line, canvas.width/2, y);
+      ctx.fillText(line, canvas.width/2, y);
+    });
+  }
+
+  function drawCanvas(){
+    if(!currentImg) return;
+    const w0 = canvas.width, h0 = canvas.height;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0,0,w0,h0);
+    const scale = Math.max(w0/currentImg.width, h0/currentImg.height);
+    const w = currentImg.width*scale, h = currentImg.height*scale;
+    const x = (w0-w)/2, y = (h0-h)/2;
+    ctx.drawImage(currentImg, x, y, w, h);
+    const size = parseInt(fontSizeInput.value,10);
+    drawMemeText(topInput.value, size + 14, true);
+    drawMemeText(bottomInput.value, canvas.height - 22, false);
+  }
+
+  [topInput, bottomInput, fontSizeInput, textColorInput, strokeColorInput].forEach(el => {
+    el.addEventListener("input", drawCanvas);
+  });
+
+  function updateSwapCounter(){
+    const left = Math.max(0, swapLimitLocal - swapsUsed);
+    swapCounter.textContent = `נשארו ${left} מתוך ${swapLimitLocal} החלפות תמונה`;
+    swapBtn.disabled = left <= 0;
+  }
+
+  swapBtn.addEventListener("click", () => {
+    if(swapsUsed >= swapLimitLocal) return;
+    swapsUsed++;
+    updateSwapCounter();
+    loadGameImage(randSeed());
+  });
+
+  function initGameRound(state){
+    if(gameRoundKey === state.playingStartedAt) return;
+    gameRoundKey = state.playingStartedAt;
+    submittedThisRound = false;
+    swapsUsed = 0;
+    swapLimitLocal = state.settings.swapLimit;
+    topInput.value = "";
+    bottomInput.value = "";
+    fontSizeInput.value = 52;
+    textColorInput.value = "#ffffff";
+    strokeColorInput.value = "#000000";
+    updateSwapCounter();
+    loadGameImage(myId + ":" + state.playingStartedAt);
+    submitBtn.disabled = false;
+    swapBtn.disabled = false;
+  }
+
+  async function submitMeme(){
+    if(submittedThisRound || !currentImg) return;
+    submittedThisRound = true;
+    submitBtn.disabled = true;
+    swapBtn.disabled = true;
+    let dataUrl = null;
+    try{ dataUrl = canvas.toDataURL("image/png"); }catch(e){ dataUrl = null; }
+
+    showScreen("submitting");
+    if(gameTimerInterval){ clearInterval(gameTimerInterval); gameTimerInterval = null; }
+
+    // write submission (read-modify-write)
+    const state = await loadState();
+    if(state && dataUrl){
+      state.submissions[myId] = { name: myName, avatarSeed: myId, dataUrl: dataUrl };
+      await saveState(state);
+    }
+
+    setTimeout(() => {
+      showScreen("waiting");
+      document.getElementById("waitingText").textContent = "מגישים את כל היצירות...";
+    }, 3000);
+  }
+  submitBtn.addEventListener("click", submitMeme);
+
+  function runGameTimer(state){
+    if(gameTimerInterval) clearInterval(gameTimerInterval);
+    timerBadge.classList.remove("hidden");
+    function tick(){
+      const elapsed = (Date.now() - state.playingStartedAt) / 1000;
+      const left = Math.max(0, Math.ceil(state.settings.timeLimit - elapsed));
+      timerBadge.textContent = left;
+      timerBadge.classList.toggle("low", left <= 10);
+      if(left <= 0){
+        clearInterval(gameTimerInterval);
+        gameTimerInterval = null;
+        submitMeme();
+      }
+    }
+    tick();
+    gameTimerInterval = setInterval(tick, 250);
+  }
+
+  // host: after time is up + buffer, move everyone to reveal
+  let revealTriggeredFor = null;
+  function maybeHostAdvanceToReveal(state){
+    if(myId !== state.hostId || state.phase !== "playing") return;
+    if(revealTriggeredFor === state.playingStartedAt) return;
+    const dueAt = state.playingStartedAt + state.settings.timeLimit*1000 + 4000;
+    const delay = dueAt - Date.now();
+    revealTriggeredFor = state.playingStartedAt;
+    setTimeout(async () => {
+      const fresh = await loadState();
+      if(!fresh || fresh.phase !== "playing" || fresh.playingStartedAt !== state.playingStartedAt) return;
+      const ids = Object.keys(fresh.submissions);
+      fresh.revealOrder = shuffle(ids);
+      fresh.revealIndex = 0;
+      fresh.revealStartedAt = Date.now();
+      fresh.phase = ids.length ? "reveal" : "done";
+      await saveState(fresh);
+    }, Math.max(0, delay));
+  }
+
+  // ---------- reveal ----------
+  const revealCount = document.getElementById("revealCount");
+  const revealName = document.getElementById("revealName");
+  const revealImg = document.getElementById("revealImg");
+  const revealBar = document.getElementById("revealBar");
+  let revealBarInterval = null;
+  let revealAdvanceScheduledFor = null;
+
+  function renderReveal(state){
+    const order = state.revealOrder || [];
+    const idx = state.revealIndex || 0;
+    const id = order[idx];
+    const sub = id ? state.submissions[id] : null;
+    revealCount.textContent = `${Math.min(idx+1, order.length)} / ${order.length}`;
+    revealName.textContent = sub ? sub.name : "";
+    revealImg.src = sub ? sub.dataUrl : "";
+
+    if(revealBarInterval) clearInterval(revealBarInterval);
+    const dur = 10000;
+    function updateBar(){
+      const elapsed = Date.now() - (state.revealStartedAt || Date.now());
+      const pct = Math.max(0, Math.min(100, 100 - (elapsed/dur)*100));
+      revealBar.style.width = pct + "%";
+    }
+    updateBar();
+    revealBarInterval = setInterval(updateBar, 150);
+
+    if(myId === state.hostId && revealAdvanceScheduledFor !== state.revealStartedAt){
+      revealAdvanceScheduledFor = state.revealStartedAt;
+      const delay = (state.revealStartedAt + dur) - Date.now();
+      setTimeout(async () => {
+        const fresh = await loadState();
+        if(!fresh || fresh.phase !== "reveal" || fresh.revealStartedAt !== state.revealStartedAt) return;
+        const nextIdx = (fresh.revealIndex || 0) + 1;
+        if(nextIdx >= (fresh.revealOrder || []).length){
+          fresh.phase = "done";
+        } else {
+          fresh.revealIndex = nextIdx;
+          fresh.revealStartedAt = Date.now();
+        }
+        await saveState(fresh);
+      }, Math.max(0, delay));
+    }
+  }
+
+  // ---------- done ----------
+  const doneGallery = document.getElementById("doneGallery");
+  const doneHostBtns = document.getElementById("doneHostBtns");
+
+  function renderDone(state){
+    doneGallery.innerHTML = "";
+    (state.revealOrder || []).forEach(id => {
+      const sub = state.submissions[id];
+      if(!sub) return;
+      const fig = document.createElement("figure");
+      fig.innerHTML = `<img src="${sub.dataUrl}" alt=""><figcaption>${escapeHtml(sub.name)}</figcaption>`;
+      doneGallery.appendChild(fig);
+    });
+    doneHostBtns.innerHTML = "";
+    if(myId === state.hostId){
+      const btn = document.createElement("button");
+      btn.className = "main";
+      btn.type = "button";
+      btn.textContent = "🔁 סיבוב חדש";
+      btn.addEventListener("click", async () => {
+        const fresh = await loadState();
+        if(!fresh || myId !== fresh.hostId) return;
+        fresh.phase = "lobby";
+        fresh.countdownStartedAt = null;
+        fresh.playingStartedAt = null;
+        fresh.submissions = {};
+        fresh.revealOrder = [];
+        fresh.revealIndex = 0;
+        fresh.revealStartedAt = null;
+        await saveState(fresh);
+        applyState(fresh);
+      });
+      doneHostBtns.appendChild(btn);
+    } else {
+      const note = document.createElement("div");
+      note.className = "waiting-note";
+      note.textContent = "⏳ ממתינים שהמנחה יתחיל סיבוב חדש...";
+      doneHostBtns.appendChild(note);
+    }
+  }
+
+  // ---------- main state application ----------
+  let lastRenderedPhase = null;
+
+  function applyState(state){
+    if(!state) return;
+
+    if(state.phase !== "playing" && state.phase !== "game"){
+      timerBadge.classList.add("hidden");
+      if(gameTimerInterval){ clearInterval(gameTimerInterval); gameTimerInterval = null; }
+    }
+    if(state.phase !== "reveal" && revealBarInterval){
+      clearInterval(revealBarInterval); revealBarInterval = null;
+    }
+
+    switch(state.phase){
+      case "lobby":
+        renderLobby(state);
+        showScreen("lobby");
+        break;
+      case "countdown":
+        showScreen("countdown");
+        runCountdown(state);
+        break;
+      case "playing":
+        showScreen(submittedThisRound ? "waiting" : "game");
+        initGameRound(state);
+        if(!submittedThisRound){
+          showScreen("game");
+          runGameTimer(state);
+        }
+        maybeHostAdvanceToReveal(state);
+        break;
+      case "reveal":
+        showScreen("reveal");
+        renderReveal(state);
+        break;
+      case "done":
+        renderDone(state);
+        showScreen("done");
+        break;
+      default:
+        renderLobby(state);
+        showScreen("lobby");
+    }
+    lastRenderedPhase = state.phase;
+  }
+
+  // ---------- polling ----------
+  let pollHandle = null;
+  function startPolling(){
+    if(pollHandle) return;
+    pollHandle = setInterval(async () => {
+      const state = await loadState();
+      if(state) applyState(state);
+    }, 1200);
+  }
+
+})();
+</script>
+</body>
+</html>
