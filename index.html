@@ -14,11 +14,15 @@
     --cyan:#2BD2E0;
     --yellow:#FFE400;
     --green:#38D66B;
+    --purple:#8B5CF6;
+    --orange:#FF7A1A;
     --line:4px;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
+    position:relative;
+    overflow-x:hidden;
     background:
       radial-gradient(circle at 6px 6px, rgba(21,21,21,.08) 2px, transparent 2.4px) 0 0/22px 22px,
       var(--paper);
@@ -27,8 +31,12 @@
     min-height:100vh;
     padding:24px 16px 50px;
   }
-  .wrap{max-width:900px;margin:0 auto;}
-  header{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:20px;}
+
+  .bg-decor{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+  .bg-decor svg{position:absolute;opacity:.15;}
+
+  .wrap{max-width:900px;margin:0 auto;position:relative;z-index:1;}
+  header{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:14px;}
   .logo{
     font-family:'Anton',sans-serif;
     font-size:clamp(2.2rem,7vw,3.6rem);
@@ -42,12 +50,26 @@
     padding:0 10px;transform:rotate(2deg);display:inline-block;box-shadow:6px 6px 0 var(--ink);}
   .tagline{margin-top:10px;font-weight:600;opacity:.75;font-size:.95rem;}
 
+  .ticker{
+    width:100%;overflow:hidden;background:var(--ink);border:3px solid var(--ink);border-radius:12px;
+    margin-bottom:22px;box-shadow:5px 5px 0 var(--pink);
+  }
+  .ticker-track{
+    display:inline-flex;white-space:nowrap;padding:9px 0;color:var(--yellow);
+    font-family:'Archivo Black',sans-serif;font-size:.82rem;letter-spacing:.4px;
+    animation:tickerScroll 24s linear infinite;
+  }
+  .ticker-track span{padding:0 10px;}
+  @keyframes tickerScroll{ from{transform:translateX(0);} to{transform:translateX(-50%);} }
+  @media (prefers-reduced-motion: reduce){ .ticker-track{animation:none;} }
+
   .panel{
     background:#fff;border:var(--line) solid var(--ink);border-radius:18px;
-    box-shadow:8px 8px 0 var(--cyan);padding:22px;margin-bottom:20px;
+    box-shadow:8px 8px 0 var(--cyan);padding:22px;margin-bottom:20px;position:relative;
   }
   .panel.pink-shadow{box-shadow:8px 8px 0 var(--pink);}
   .panel.yellow-shadow{box-shadow:8px 8px 0 var(--yellow);}
+  .panel.purple-shadow{box-shadow:8px 8px 0 var(--purple);}
 
   h2{font-family:'Archivo Black',sans-serif;font-size:1.3rem;margin:0 0 14px;text-transform:uppercase;}
   p.sub{opacity:.7;font-weight:600;font-size:.9rem;margin:-8px 0 16px;}
@@ -58,6 +80,7 @@
     font-family:'Rubik',sans-serif;font-size:1rem;font-weight:600;background:var(--paper);color:var(--ink);
   }
   input:focus{outline:3px solid var(--yellow);outline-offset:1px;}
+  input[readonly]{opacity:.85;cursor:text;}
   input[type=color]{width:44px;height:38px;border:3px solid var(--ink);border-radius:8px;padding:0;background:none;cursor:pointer;}
   input[type=range]{width:100%;accent-color:var(--pink);}
 
@@ -70,16 +93,47 @@
     border:3px solid var(--ink);border-radius:10px;padding:12px 18px;cursor:pointer;
     background:var(--yellow);color:var(--ink);box-shadow:4px 4px 0 var(--ink);transition:transform .08s ease;
   }
-  button:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink);}
-  button:active{transform:translate(1px,1px);box-shadow:2px 2px 0 var(--ink);}
-  button:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:4px 4px 0 var(--ink);}
+  button:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink);animation:wobble .35s ease;}
+  button:active{transform:translate(1px,1px);box-shadow:2px 2px 0 var(--ink);animation:none;}
+  button:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:4px 4px 0 var(--ink);animation:none;}
   button.alt{background:var(--cyan);}
   button.main{background:var(--pink);color:var(--paper);}
   button.ok{background:var(--green);}
   button:focus-visible{outline:3px solid var(--ink);outline-offset:2px;}
+  @keyframes wobble{
+    0%,100%{transform:translate(-2px,-2px) rotate(0);}
+    25%{transform:translate(-3px,-4px) rotate(-2deg);}
+    75%{transform:translate(-1px,-4px) rotate(2deg);}
+  }
+  @media (prefers-reduced-motion: reduce){ button:hover{animation:none;} }
+
+  .linklike{
+    background:none;border:none;box-shadow:none;text-decoration:underline;text-transform:none;
+    font-family:'Rubik',sans-serif;font-weight:700;font-size:.85rem;padding:8px 2px;color:var(--ink);opacity:.65;
+  }
+  .linklike:hover{transform:none;box-shadow:none;opacity:1;animation:none;}
 
   .screen{display:none;}
   .screen.active{display:block;}
+
+  /* stickers */
+  .sticker{
+    position:absolute;top:-14px;left:-10px;transform:rotate(-9deg);
+    font-family:'Archivo Black',sans-serif;font-size:.68rem;text-transform:uppercase;
+    padding:5px 10px;border:2.5px solid var(--ink);border-radius:6px;box-shadow:3px 3px 0 var(--ink);
+    z-index:3;
+  }
+  .sticker-yellow{background:var(--yellow);}
+  .sticker-cyan{background:var(--cyan);}
+  .sticker-orange{background:var(--orange);color:var(--paper);}
+
+  /* join */
+  .hidden{display:none !important;}
+
+  /* invite box */
+  .invite-box{background:var(--paper);border:3px dashed var(--ink);border-radius:14px;padding:14px;margin-bottom:18px;}
+  .invite-code{font-family:'Anton',sans-serif;font-size:1.25rem;letter-spacing:2px;margin-bottom:10px;}
+  .invite-code b{background:var(--pink);color:var(--paper);padding:2px 12px;border-radius:8px;-webkit-text-stroke:1px var(--ink);}
 
   /* lobby */
   .players{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:14px;margin-bottom:18px;}
@@ -89,7 +143,8 @@
   }
   .player-card img{width:64px;height:64px;border-radius:50%;border:3px solid var(--ink);object-fit:cover;background:#000;}
   .player-card .pname{font-weight:800;font-size:.82rem;margin-top:6px;word-break:break-word;}
-  .player-card .crown{position:absolute;top:-10px;right:-6px;font-size:1.3rem;}
+  .crown-icon{position:absolute;top:-24px;right:-10px;width:44px;height:auto;transform:rotate(-10deg);
+    filter:drop-shadow(2px 3px 0 rgba(0,0,0,.45));z-index:4;}
   .you-tag{display:inline-block;margin-top:2px;font-size:.65rem;background:var(--cyan);border:2px solid var(--ink);border-radius:6px;padding:0 5px;font-weight:800;}
 
   .waiting-note{font-weight:700;opacity:.7;text-align:center;padding:10px 0;}
@@ -108,7 +163,8 @@
     font-family:'Anton',sans-serif;font-size:1.6rem;background:var(--yellow);
     border:3px solid var(--ink);border-radius:12px;padding:6px 16px;box-shadow:4px 4px 0 var(--ink);
   }
-  .timer-badge.low{background:var(--pink);color:var(--paper);}
+  .timer-badge.low{background:var(--pink);color:var(--paper);animation:pulseTimer .6s ease-in-out infinite;}
+  @keyframes pulseTimer{0%,100%{transform:scale(1);}50%{transform:scale(1.14);}}
 
   .stage{background:var(--ink);border:var(--line) solid var(--ink);border-radius:18px;box-shadow:10px 10px 0 var(--pink);padding:14px;display:flex;justify-content:center;}
   canvas{max-width:100%;height:auto;border-radius:10px;display:block;background:#000;}
@@ -137,40 +193,93 @@
 
   .btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;}
   .hint{margin-top:14px;font-size:.8rem;opacity:.65;line-height:1.6;}
-  .hidden{display:none !important;}
 </style>
 </head>
 <body>
+
+<div class="bg-decor" aria-hidden="true">
+  <svg width="220" height="220" style="top:-50px;left:-70px;" viewBox="0 0 100 100"><polygon points="50,3 61,38 98,38 68,59 79,95 50,73 21,95 32,59 2,38 39,38" fill="#FF3D8A"/></svg>
+  <svg width="190" height="190" style="bottom:-40px;right:-60px;" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#2BD2E0"/></svg>
+  <svg width="150" height="150" style="top:38%;right:-70px;" viewBox="0 0 100 100"><polygon points="50,3 61,38 98,38 68,59 79,95 50,73 21,95 32,59 2,38 39,38" fill="#FFE400"/></svg>
+  <svg width="130" height="130" style="top:12%;left:-50px;" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" fill="#8B5CF6" transform="rotate(20 50 50)"/></svg>
+  <svg width="160" height="160" style="bottom:8%;left:-60px;" viewBox="0 0 100 100"><polygon points="50,3 61,38 98,38 68,59 79,95 50,73 21,95 32,59 2,38 39,38" fill="#FF7A1A"/></svg>
+</div>
+
 <div class="wrap">
 
   <header>
     <div class="logo">MAKE <span class="hit">IT</span> MEME <span class="on">ONLINE</span></div>
-    <div class="tagline">מלאו שם, המתינו בלובי, וכשהמנחה לוחץ START — יוצרים ממים נגד השעון</div>
+    <div class="tagline">צרו לובי, שלחו קישור לחברים, וכשה"מנחה" לוחץ START — כולם יוצרים ממים נגד השעון</div>
   </header>
+
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker-track">
+      <span>🔥 מי יעשה את הממים הכי טובים?</span><span>🎨 תבחרו תמונה, תכתבו טקסט, תצחיקו את החברים</span><span>⏱️ השעון רץ...</span><span>👑 מי יהיה ה"מנחה"?</span><span>😂 בלי רחמים, רק ממים</span>
+      <span>🔥 מי יעשה את הממים הכי טובים?</span><span>🎨 תבחרו תמונה, תכתבו טקסט, תצחיקו את החברים</span><span>⏱️ השעון רץ...</span><span>👑 מי יהיה ה"מנחה"?</span><span>😂 בלי רחמים, רק ממים</span>
+    </div>
+  </div>
 
   <!-- JOIN -->
   <section id="screen-join" class="screen active">
-    <div class="panel">
-      <h2>הצטרפות ללובי</h2>
-      <p class="sub">כל מי שנכנס לעמוד הזה משתתף באותו לובי משותף</p>
+    <div class="panel pink-shadow" id="createPanel">
+      <span class="sticker sticker-yellow">חדש!</span>
+      <h2>🎉 צרו לובי חדש</h2>
+      <p class="sub">אתם תהיו ה"מנחה" — תשלטו בהגדרות ותוכלו לשלוח קישור לחברים</p>
       <div class="row">
         <div class="field">
-          <label for="nameInput">השם שלך</label>
-          <input type="text" id="nameInput" maxlength="18" placeholder="לדוגמה: דני">
+          <label for="createNameInput">השם שלך</label>
+          <input type="text" id="createNameInput" maxlength="18" placeholder="לדוגמה: דני">
+        </div>
+      </div>
+      <div class="btns">
+        <button class="main" id="createBtn" type="button">🎉 צור/י לובי</button>
+      </div>
+      <button class="linklike" id="haveCodeToggle" type="button">כבר יש לי קישור/קוד הזמנה &larr;</button>
+    </div>
+
+    <div class="panel yellow-shadow hidden" id="joinPanel">
+      <span class="sticker sticker-cyan">LIVE</span>
+      <h2>🚪 הצטרפות ללובי</h2>
+      <p class="sub" id="joinSub">הזינו שם כדי להצטרף לחברים שלכם</p>
+      <div class="row">
+        <div class="field">
+          <label for="joinCodeInput">קוד לובי</label>
+          <input type="text" id="joinCodeInput" maxlength="8" placeholder="לדוגמה: AB12CD" style="text-transform:uppercase;">
+        </div>
+        <div class="field">
+          <label for="joinNameInput">השם שלך</label>
+          <input type="text" id="joinNameInput" maxlength="18" placeholder="לדוגמה: דני">
         </div>
       </div>
       <div class="btns">
         <button class="main" id="joinBtn" type="button">🚪 הצטרף/י ללובי</button>
       </div>
-      <div class="hint">שים לב: הלובי, השחקנים והיצירות משותפים לכל מי שפותח את העמוד הזה — כולל שם ותמונת הפרופיל שלכם.</div>
+      <button class="linklike" id="createInsteadToggle" type="button">&rarr; רוצה ליצור לובי חדש במקום</button>
     </div>
+
+    <div class="hint">כל מי שנכנס עם אותו קוד לובי / קישור משחק יחד באותו לובי — כולל שם ותמונת הפרופיל.</div>
   </section>
 
   <!-- LOBBY -->
   <section id="screen-lobby" class="screen">
-    <div class="panel">
+    <div class="panel purple-shadow">
+      <span class="sticker sticker-orange">לובי</span>
       <h2>הלובי</h2>
       <p class="sub" id="lobbySub">ממתינים לשחקנים...</p>
+
+      <div class="invite-box">
+        <div class="invite-code">קוד לובי: <b id="lobbyCodeDisplay">------</b></div>
+        <div class="row">
+          <div class="field">
+            <label for="inviteLinkInput">קישור הזמנה לחברים</label>
+            <input type="text" id="inviteLinkInput" readonly>
+          </div>
+        </div>
+        <div class="btns">
+          <button class="alt" id="copyInviteBtn" type="button">📋 העתק קישור</button>
+        </div>
+      </div>
+
       <div class="players" id="playersGrid"></div>
 
       <div id="hostSettings" class="hidden">
@@ -291,9 +400,10 @@
 (function(){
   "use strict";
 
-  // ---------- basic identity ----------
+  // ---------- identity ----------
   const myId = (crypto.randomUUID ? crypto.randomUUID() : ('p-' + Math.random().toString(36).slice(2)));
   let myName = "";
+  let currentLobbyCode = null;
   let audioCtx = null;
 
   function ensureAudio(){
@@ -330,16 +440,59 @@
     return a;
   }
 
-  // ---------- storage ----------
-  async function loadState(){
+  function crownSvg(){
+    return '<svg class="crown-icon" viewBox="0 0 64 48" xmlns="http://www.w3.org/2000/svg">'
+      + '<defs><linearGradient id="crownGold" x1="0" y1="0" x2="0" y2="1">'
+      + '<stop offset="0%" stop-color="#FFEBA6"/><stop offset="45%" stop-color="#FFC530"/><stop offset="100%" stop-color="#B8790B"/>'
+      + '</linearGradient></defs>'
+      + '<path d="M4 40 L2 16 L16 26 L32 6 L48 26 L62 16 L60 40 Z" fill="url(#crownGold)" stroke="#7A4A05" stroke-width="2" stroke-linejoin="round"/>'
+      + '<rect x="4" y="40" width="56" height="6" rx="2" fill="url(#crownGold)" stroke="#7A4A05" stroke-width="2"/>'
+      + '<circle cx="32" cy="14" r="4" fill="#FF3D8A" stroke="#7A4A05" stroke-width="1.5"/>'
+      + '<circle cx="16" cy="24" r="3" fill="#2BD2E0" stroke="#7A4A05" stroke-width="1.5"/>'
+      + '<circle cx="48" cy="24" r="3" fill="#2BD2E0" stroke="#7A4A05" stroke-width="1.5"/>'
+      + '</svg>';
+  }
+
+  // ---------- lobby code / url ----------
+  function genLobbyCode(){
+    const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    let s = "";
+    for(let i=0;i<6;i++) s += chars[Math.floor(Math.random()*chars.length)];
+    return s;
+  }
+  function readLobbyCodeFromLocation(){
     try{
-      const r = await window.storage.get("state", true);
+      const hash = window.location.hash.replace(/^#/, "");
+      const params = new URLSearchParams(hash);
+      const code = params.get("lobby");
+      return code ? code.toUpperCase() : null;
+    }catch(e){ return null; }
+  }
+  function setLobbyCodeInUrl(code){
+    try{
+      const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      params.set("lobby", code);
+      history.replaceState(null, "", window.location.pathname + window.location.search + "#" + params.toString());
+    }catch(e){}
+  }
+  function buildInviteLink(code){
+    const base = window.location.href.split("#")[0];
+    return base + "#lobby=" + code;
+  }
+
+  // ---------- storage ----------
+  function storageKey(code){ return "lobby-" + code; }
+  async function loadState(code){
+    if(!code) return null;
+    try{
+      const r = await window.storage.get(storageKey(code), true);
       return r ? JSON.parse(r.value) : null;
     }catch(e){ return null; }
   }
-  async function saveState(state){
+  async function saveState(code, state){
+    if(!code) return false;
     try{
-      await window.storage.set("state", JSON.stringify(state), true);
+      await window.storage.set(storageKey(code), JSON.stringify(state), true);
       return true;
     }catch(e){ return false; }
   }
@@ -371,33 +524,80 @@
 
   const timerBadge = document.getElementById("timerBadge");
 
-  // ---------- join ----------
-  const nameInput = document.getElementById("nameInput");
+  // ---------- join / create screen ----------
+  const createPanel = document.getElementById("createPanel");
+  const joinPanel = document.getElementById("joinPanel");
+  const createNameInput = document.getElementById("createNameInput");
+  const createBtn = document.getElementById("createBtn");
+  const joinCodeInput = document.getElementById("joinCodeInput");
+  const joinNameInput = document.getElementById("joinNameInput");
   const joinBtn = document.getElementById("joinBtn");
+  const haveCodeToggle = document.getElementById("haveCodeToggle");
+  const createInsteadToggle = document.getElementById("createInsteadToggle");
+  const joinSub = document.getElementById("joinSub");
 
-  async function doJoin(){
-    const name = nameInput.value.trim();
-    if(!name){ nameInput.focus(); return; }
+  const urlCode = readLobbyCodeFromLocation();
+  if(urlCode){
+    createPanel.classList.add("hidden");
+    joinPanel.classList.remove("hidden");
+    joinCodeInput.value = urlCode;
+    joinSub.textContent = `מצטרפים ללובי ${urlCode} — הזינו שם כדי להתחיל`;
+  }
+
+  haveCodeToggle.addEventListener("click", () => {
+    createPanel.classList.add("hidden");
+    joinPanel.classList.remove("hidden");
+  });
+  createInsteadToggle.addEventListener("click", () => {
+    joinPanel.classList.add("hidden");
+    createPanel.classList.remove("hidden");
+  });
+
+  async function doCreate(){
+    const name = createNameInput.value.trim();
+    if(!name){ createNameInput.focus(); return; }
     myName = name;
     ensureAudio();
-    joinBtn.disabled = true;
-    let state = await loadState();
-    if(!state){ state = freshState(); }
-    if(!state.players[myId]){
-      state.players[myId] = { name: myName, avatarSeed: myId, joinedAt: Date.now() };
-    } else {
-      state.players[myId].name = myName;
-    }
-    if(!state.hostId || !state.players[state.hostId]){
-      state.hostId = myId;
-    }
-    await saveState(state);
+    createBtn.disabled = true;
+    const code = genLobbyCode();
+    currentLobbyCode = code;
+    const state = freshState();
+    state.hostId = myId;
+    state.players[myId] = { name: myName, avatarSeed: myId, joinedAt: Date.now() };
+    await saveState(code, state);
+    setLobbyCodeInUrl(code);
     lastRenderedPhase = null;
     applyState(state);
     startPolling();
   }
-  joinBtn.addEventListener("click", doJoin);
-  nameInput.addEventListener("keydown", e => { if(e.key === "Enter") doJoin(); });
+  createBtn.addEventListener("click", doCreate);
+  createNameInput.addEventListener("keydown", e => { if(e.key === "Enter") doCreate(); });
+
+  async function doJoinExisting(){
+    const code = joinCodeInput.value.trim().toUpperCase();
+    const name = joinNameInput.value.trim();
+    if(!code){ joinCodeInput.focus(); return; }
+    if(!name){ joinNameInput.focus(); return; }
+    myName = name;
+    ensureAudio();
+    joinBtn.disabled = true;
+    const state = await loadState(code);
+    if(!state){
+      alert("לא נמצא לובי עם הקוד הזה. בדקו את הקוד/קישור, או צרו לובי חדש.");
+      joinBtn.disabled = false;
+      return;
+    }
+    currentLobbyCode = code;
+    if(!state.players[myId]) state.players[myId] = { name: myName, avatarSeed: myId, joinedAt: Date.now() };
+    else state.players[myId].name = myName;
+    await saveState(code, state);
+    setLobbyCodeInUrl(code);
+    lastRenderedPhase = null;
+    applyState(state);
+    startPolling();
+  }
+  joinBtn.addEventListener("click", doJoinExisting);
+  joinNameInput.addEventListener("keydown", e => { if(e.key === "Enter") doJoinExisting(); });
 
   // ---------- lobby ----------
   const playersGrid = document.getElementById("playersGrid");
@@ -407,8 +607,14 @@
   const swapLimitInput = document.getElementById("swapLimitInput");
   const timeLimitInput = document.getElementById("timeLimitInput");
   const startBtn = document.getElementById("startBtn");
+  const lobbyCodeDisplay = document.getElementById("lobbyCodeDisplay");
+  const inviteLinkInput = document.getElementById("inviteLinkInput");
+  const copyInviteBtn = document.getElementById("copyInviteBtn");
 
   function renderLobby(state){
+    lobbyCodeDisplay.textContent = currentLobbyCode || "------";
+    inviteLinkInput.value = currentLobbyCode ? buildInviteLink(currentLobbyCode) : "";
+
     const ids = Object.keys(state.players);
     lobbySub.textContent = ids.length === 1 ? "שחקן/ית אחד/ת בלובי..." : `${ids.length} שחקנים בלובי`;
     playersGrid.innerHTML = "";
@@ -417,7 +623,7 @@
       const card = document.createElement("div");
       card.className = "player-card";
       card.innerHTML = `
-        ${id === state.hostId ? '<div class="crown">👑</div>' : ""}
+        ${id === state.hostId ? crownSvg() : ""}
         <img src="${avatarUrl(p.avatarSeed)}" alt="">
         <div class="pname">${escapeHtml(p.name)}</div>
         ${id === myId ? '<div class="you-tag">את/ה</div>' : ""}
@@ -437,9 +643,28 @@
     return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   }
 
+  copyInviteBtn.addEventListener("click", async () => {
+    const link = inviteLinkInput.value;
+    if(!link) return;
+    let copied = false;
+    try{
+      await navigator.clipboard.writeText(link);
+      copied = true;
+    }catch(e){
+      try{
+        inviteLinkInput.select();
+        document.execCommand("copy");
+        copied = true;
+      }catch(e2){}
+    }
+    const original = copyInviteBtn.textContent;
+    copyInviteBtn.textContent = copied ? "✅ הועתק!" : "❌ נסה להעתיק ידנית";
+    setTimeout(() => { copyInviteBtn.textContent = original; }, 1800);
+  });
+
   startBtn.addEventListener("click", async () => {
     ensureAudio();
-    let state = await loadState();
+    const state = await loadState(currentLobbyCode);
     if(!state || myId !== state.hostId) return;
     state.settings.swapLimit = Math.max(1, parseInt(swapLimitInput.value,10) || 10);
     state.settings.timeLimit = Math.max(15, parseInt(timeLimitInput.value,10) || 60);
@@ -448,7 +673,7 @@
     state.submissions = {};
     state.revealOrder = [];
     state.revealIndex = 0;
-    await saveState(state);
+    await saveState(currentLobbyCode, state);
     applyState(state);
   });
 
@@ -477,16 +702,15 @@
       if(delay <= 0) run(); else setTimeout(run, delay);
     });
 
-    // host advances to playing once countdown completes
     if(myId === state.hostId){
       const goDelay = state.countdownStartedAt + 3600 - Date.now();
       setTimeout(async () => {
-        const fresh = await loadState();
+        const fresh = await loadState(currentLobbyCode);
         if(!fresh || fresh.phase !== "countdown" || fresh.countdownStartedAt !== state.countdownStartedAt) return;
         fresh.phase = "playing";
         fresh.playingStartedAt = Date.now();
         fresh.submissions = {};
-        await saveState(fresh);
+        await saveState(currentLobbyCode, fresh);
       }, Math.max(0, goDelay));
     }
   }
@@ -514,7 +738,7 @@
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => { currentImg = img; drawCanvas(); };
-    img.onerror = () => { /* try another seed on failure */ if(seed.indexOf("retry")===-1) loadGameImage(seed + "retry"); };
+    img.onerror = () => { if(seed.indexOf("retry")===-1) loadGameImage(seed + "retry"); };
     img.src = imageUrl(seed);
   }
 
@@ -610,11 +834,10 @@
     showScreen("submitting");
     if(gameTimerInterval){ clearInterval(gameTimerInterval); gameTimerInterval = null; }
 
-    // write submission (read-modify-write)
-    const state = await loadState();
+    const state = await loadState(currentLobbyCode);
     if(state && dataUrl){
       state.submissions[myId] = { name: myName, avatarSeed: myId, dataUrl: dataUrl };
-      await saveState(state);
+      await saveState(currentLobbyCode, state);
     }
 
     setTimeout(() => {
@@ -642,7 +865,6 @@
     gameTimerInterval = setInterval(tick, 250);
   }
 
-  // host: after time is up + buffer, move everyone to reveal
   let revealTriggeredFor = null;
   function maybeHostAdvanceToReveal(state){
     if(myId !== state.hostId || state.phase !== "playing") return;
@@ -651,14 +873,14 @@
     const delay = dueAt - Date.now();
     revealTriggeredFor = state.playingStartedAt;
     setTimeout(async () => {
-      const fresh = await loadState();
+      const fresh = await loadState(currentLobbyCode);
       if(!fresh || fresh.phase !== "playing" || fresh.playingStartedAt !== state.playingStartedAt) return;
       const ids = Object.keys(fresh.submissions);
       fresh.revealOrder = shuffle(ids);
       fresh.revealIndex = 0;
       fresh.revealStartedAt = Date.now();
       fresh.phase = ids.length ? "reveal" : "done";
-      await saveState(fresh);
+      await saveState(currentLobbyCode, fresh);
     }, Math.max(0, delay));
   }
 
@@ -693,7 +915,7 @@
       revealAdvanceScheduledFor = state.revealStartedAt;
       const delay = (state.revealStartedAt + dur) - Date.now();
       setTimeout(async () => {
-        const fresh = await loadState();
+        const fresh = await loadState(currentLobbyCode);
         if(!fresh || fresh.phase !== "reveal" || fresh.revealStartedAt !== state.revealStartedAt) return;
         const nextIdx = (fresh.revealIndex || 0) + 1;
         if(nextIdx >= (fresh.revealOrder || []).length){
@@ -702,7 +924,7 @@
           fresh.revealIndex = nextIdx;
           fresh.revealStartedAt = Date.now();
         }
-        await saveState(fresh);
+        await saveState(currentLobbyCode, fresh);
       }, Math.max(0, delay));
     }
   }
@@ -727,7 +949,7 @@
       btn.type = "button";
       btn.textContent = "🔁 סיבוב חדש";
       btn.addEventListener("click", async () => {
-        const fresh = await loadState();
+        const fresh = await loadState(currentLobbyCode);
         if(!fresh || myId !== fresh.hostId) return;
         fresh.phase = "lobby";
         fresh.countdownStartedAt = null;
@@ -736,7 +958,7 @@
         fresh.revealOrder = [];
         fresh.revealIndex = 0;
         fresh.revealStartedAt = null;
-        await saveState(fresh);
+        await saveState(currentLobbyCode, fresh);
         applyState(fresh);
       });
       doneHostBtns.appendChild(btn);
@@ -754,7 +976,7 @@
   function applyState(state){
     if(!state) return;
 
-    if(state.phase !== "playing" && state.phase !== "game"){
+    if(state.phase !== "playing"){
       timerBadge.classList.add("hidden");
       if(gameTimerInterval){ clearInterval(gameTimerInterval); gameTimerInterval = null; }
     }
@@ -772,9 +994,10 @@
         runCountdown(state);
         break;
       case "playing":
-        showScreen(submittedThisRound ? "waiting" : "game");
         initGameRound(state);
-        if(!submittedThisRound){
+        if(submittedThisRound){
+          showScreen("waiting");
+        } else {
           showScreen("game");
           runGameTimer(state);
         }
@@ -800,7 +1023,7 @@
   function startPolling(){
     if(pollHandle) return;
     pollHandle = setInterval(async () => {
-      const state = await loadState();
+      const state = await loadState(currentLobbyCode);
       if(state) applyState(state);
     }, 1200);
   }
